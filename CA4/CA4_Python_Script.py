@@ -30,35 +30,15 @@ class Commit:
         return 'svn merge -r' + str(commit.revision-1) + ':' + str(commit.revision) + ' by ' \
                 + commit.author + ' with the comment ' + ','.join(commit.comment) \
                 + ' and the changes ' + ','.join(commit.changes)
-   
-def get_authors(data):
-    authors = {}
-    for commit in data:
-        author = commit.author
-        authors[author] = authors.get(author, 0) + 1
-    return authors
 
-def get_days(data):
-    days = {}
+def get_attribute(data, attribute):
+    result = {}
     for commit in data:
-        day = commit.dayinweek
-        days[day] = days.get(day, 0) + 1
-    return days
-
-def get_months(data):
-    months = {}
-    for commit in data:
-        month = commit.month
-        months[month] = months.get(month, 0) + 1
-    return months
-    
-def get_weeks(data):
-    weeks = {}
-    for commit in data:
-        week = commit.weeknumber
-        weeks[week] = weeks.get(week, 0) + 1
-    return weeks
-
+        value = getattr(commit, attribute)
+        item = value
+        result[item] = result.get(item, 0) + 1
+    return result
+ 
 def get_change_stats_by_author(data):
     all_authors = []
     for commit in data:
@@ -142,6 +122,22 @@ def save_commit_list_as_csv (location):
             commit.year, commit.comment_line_count, commit.number_changes, commit.number_a, commit.number_d, commit.number_m, commit.number_r,
             commit.comment])
     data_export.close()
+
+def save_dict_as_csv (data,location):
+    with open(location,'wb') as output_file:
+        w = csv.writer(output_file)
+        w.writerow(data.keys())
+        w.writerow(data.values())      
+    output_file.close()
+    
+def save_dict_list_as_csv(data, location) :          
+    keys = data[0].keys()
+    with open(location, 'wb') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(data)
+            
+    output_file.close()
     
 def print_dict_to_console(data,title):
     print title
@@ -158,11 +154,26 @@ data = read_file(changes_file)
 results = get_commits(data)
 save_commit_list_as_csv("Commit List.csv") 
 
-authors = get_authors(results)
-days = get_days(results)
-weeks = get_weeks(results)
-months = get_months(results)
+authors = get_attribute(results, "author")
+days = get_attribute(results, "dayinweek")
+weeks = get_attribute(results, "weeknumber")
+months = get_attribute(results, "month")
 change_stats = get_change_stats_by_author(results)
+
+filetoCSV = authors
+save_dict_as_csv(filetoCSV,"Counts of Revisions By Author.csv") 
+
+filetoCSV = days
+save_dict_as_csv(filetoCSV,"Counts of Revisions By Day in Week.csv") 
+
+filetoCSV = weeks
+save_dict_as_csv(filetoCSV,"Counts of Revisions By Week Number.csv") 
+
+filetoCSV = months
+save_dict_as_csv(filetoCSV,"Counts of Revisions By Month.csv") 
+
+filetoCSV = change_stats
+save_dict_list_as_csv(filetoCSV,"Counts of Files Changed By Author By Type.csv") 
 
 print authors
 print days
