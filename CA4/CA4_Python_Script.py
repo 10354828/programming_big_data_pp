@@ -1,4 +1,3 @@
-changes_file = 'changes_python.txt'
 sep = 72*'-'
 import datetime
 import csv
@@ -26,12 +25,7 @@ class Commit:
         self.number_r = number_r
         self.comment = comment
 
-    def get_commit_comment(commit):
-        return 'svn merge -r' + str(commit.revision-1) + ':' + str(commit.revision) + ' by ' \
-                + commit.author + ' with the comment ' + ','.join(commit.comment) \
-                + ' and the changes ' + ','.join(commit.changes)
-
-def get_attribute(data, attribute):
+def get_revisions_by_attribute(data, attribute):
     result = {}
     for commit in data:
         value = getattr(commit, attribute)
@@ -39,7 +33,7 @@ def get_attribute(data, attribute):
         result[item] = result.get(item, 0) + 1
     return result
  
-def get_change_stats_by_author(data):
+def get_file_changes_by_action(data):
     all_authors = []
     for commit in data:
         new_author = {}
@@ -48,17 +42,17 @@ def get_change_stats_by_author(data):
         if len(all_authors) > 0:
             for record in all_authors:
                 if record['Author'] == author :
-                    record['Commit Type A'] += commit.number_a
-                    record['Commit Type D'] += commit.number_d
-                    record['Commit Type M'] += commit.number_m
-                    record['Commit Type R'] += commit.number_r
-                    record['Total'] += commit.number_changes
+                    record['Action Type A'] += commit.number_a
+                    record['Action Type D'] += commit.number_d
+                    record['Action Type M'] += commit.number_m
+                    record['Action Type R'] += commit.number_r
+                    record['Total Files Actioned'] += commit.number_changes
                     match_found = True
                     break
                    
         if len(all_authors) == 0 or match_found == False :       
-            new_author = {'Author': author, 'Commit Type A': commit.number_a, 'Commit Type D': commit.number_d, 'Commit Type M': commit.number_m, 
-                'Commit Type R': commit.number_r, 'Total' : commit.number_changes }  
+            new_author = {'Author': author, 'Action Type A': commit.number_a, 'Action Type D': commit.number_d, 'Action Type M': commit.number_m, 
+                'Action Type R': commit.number_r, 'Total Files Actioned' : commit.number_changes }  
             all_authors.append(new_author)
      
     return all_authors
@@ -126,10 +120,9 @@ def save_commit_list_as_csv (location):
 def save_dict_as_csv (data,location):
     with open(location,'wb') as output_file:
         w = csv.writer(output_file)
-        w.writerow(data.keys())
-        w.writerow(data.values())      
+        w.writerows(data.items())
     output_file.close()
-    
+
 def save_dict_list_as_csv(data, location) :          
     keys = data[0].keys()
     with open(location, 'wb') as output_file:
@@ -149,43 +142,48 @@ def print_dict_to_console(data,title):
     for key, val in ls:
         print key, val
     return ls
-   
-data = read_file(changes_file)
+
+def print_to_console(): 
+    print authors
+    print days
+    print weeks
+    console1 = print_dict_to_console(authors, "Revisions By Author")
+
+    title = "Revisions by Author By Change Type"
+    print title
+    print "=" * len(title)
+    for row in change_files:
+        print row
+
+def export_analysis_data_to_CSV():
+    filetoCSV = authors
+    save_dict_as_csv(filetoCSV,"Python_Export_Counts of Revisions By Author.csv") 
+
+    filetoCSV = days
+    save_dict_as_csv(filetoCSV,"Python Export_Counts of Revisions By Day in Week.csv") 
+
+    filetoCSV = weeks
+    save_dict_as_csv(filetoCSV,"Python Export_Counts of Revisions By Week Number.csv") 
+
+    filetoCSV = change_files
+    save_dict_list_as_csv(filetoCSV,"Python Export_Counts of Files Changed By Action Type.csv")         
+        
+        
+# main program 
+       
+data = read_file('changes_python.txt')
 results = get_commits(data)
-save_commit_list_as_csv("Commit List.csv") 
+save_commit_list_as_csv("Python Export_Commit List.csv") 
 
-authors = get_attribute(results, "author")
-days = get_attribute(results, "dayinweek")
-weeks = get_attribute(results, "weeknumber")
-months = get_attribute(results, "month")
-change_stats = get_change_stats_by_author(results)
+authors = get_revisions_by_attribute(results, "author")
+days = get_revisions_by_attribute(results, "dayinweek")
+weeks = get_revisions_by_attribute(results, "weeknumber")
+change_files = get_file_changes_by_action(results)
 
-filetoCSV = authors
-save_dict_as_csv(filetoCSV,"Counts of Revisions By Author.csv") 
+export_analysis_data_to_CSV()
 
-filetoCSV = days
-save_dict_as_csv(filetoCSV,"Counts of Revisions By Day in Week.csv") 
 
-filetoCSV = weeks
-save_dict_as_csv(filetoCSV,"Counts of Revisions By Week Number.csv") 
 
-filetoCSV = months
-save_dict_as_csv(filetoCSV,"Counts of Revisions By Month.csv") 
-
-filetoCSV = change_stats
-save_dict_list_as_csv(filetoCSV,"Counts of Files Changed By Author By Type.csv") 
-
-print authors
-print days
-print weeks
-print months
-console1 = print_dict_to_console(authors, "Revisions By Author")
-
-title = "Revisions by Author By Change Type"
-print title
-print "=" * len(title)
-for row in change_stats:
-    print row
 
      
      
