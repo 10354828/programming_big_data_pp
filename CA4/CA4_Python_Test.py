@@ -1,3 +1,11 @@
+# Name: Paul Prew
+# Student Number: 10354828
+# Programming for Big Data
+# CA 4
+
+# The following are a suite of unit tests that are designed to test 
+# each of the main methods/functions created in the program file named 'CA4_Python_Script.py'. 
+
 
 import unittest
 
