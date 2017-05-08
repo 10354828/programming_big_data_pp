@@ -1,7 +1,42 @@
+# Name: Paul Prew
+# Student Number: 10354828
+# Programming for Big Data
+# CA 4
+
+# This is a python program that will execute to read in a sample text data file which is named 'changes_python.txt'.  
+# This program works to scrub/clean the data, and differentiate the content into 422 separate objects, 
+# which can be represented as rows on a spreadsheet.
+# Where possible additional data was derived from the data e.g. week number was derived from the date. 
+# The data was mostly extracted from the title row.  
+# Additionally, for each row the number of files actioned for each revision number was calculated, and broken out by action type e.g. A, D, M, R.
+# This extract provides a count of the total number of file changes, broken out by action type. 
+# This also enables analysis on the number of file changed by author, and breakdown by action type.
+
+# In the program the 'Commit' class is used to define the elements of the 'commit data' extracted from the file.
+# Each of the 422 commits, are represented as instance objects of the 'Commit' class.
+
+# Functions operate on these objects to perform analysis on the commit data, and return the result as dictionary files.  
+# Dictionary files are used for the analysys outputs, as this facilitates export as CSV. 
+
+# Visualisation of analysis was done using charts in R Studio, and Microsoft Excel.
+
+# When the program executes, the user is asked to confirm the action, to begin data file read.
+# If successful, a message printed to the console will acknowledge this, and also display the total number of commits in the extract 
+# and the total number of lines in the file.
+# The user is then asked to confirm next action, to perform analysis on the commit data. 
+# The program will then execute the analysis and export the results to CSV files in the working directory.
+# When above step is completed, a message printed to the console will confirm this.
+
+# The user will now be asked if they wish to print the analysis results to the console.  If the user selects this option
+# the results are printed on screen.
+
+
 sep = 72*'-'
 import datetime
 import csv
+import os
 
+# Below defines the class 'Commit' which is used to define the elements of the 'commit data' extracted from the file.
 class Commit:
     'class for commits'
    
@@ -25,6 +60,10 @@ class Commit:
         self.number_r = number_r
         self.comment = comment
 
+        
+# Below is a generic function that will accept as parameter an attribute from the commit data
+# This allows this function to be called multiple times with different parameter values 
+# e.g. revisions by author, revisions by day.
 def get_revisions_by_attribute(data, attribute):
     result = {}
     for commit in data:
@@ -32,7 +71,10 @@ def get_revisions_by_attribute(data, attribute):
         item = value
         result[item] = result.get(item, 0) + 1
     return result
- 
+
+# Below function will get the total number of file changes for all 422 commits,
+# and break them out by file change action type i.e. A, D, M, R,
+# and also by author    
 def get_file_changes_by_action(data):
     all_authors = []
     for commit in data:
@@ -58,7 +100,6 @@ def get_file_changes_by_action(data):
     return all_authors
     
 def read_file(changes_file):
-    # use strip to strip out spaces and trim the line.
     data = [line.strip() for line in open(changes_file, 'r')]
     return data  
 
@@ -70,7 +111,6 @@ def get_commits(data):
     author = {}
     while True:
         try:
-            # parse each of the commits and put them into a list of commits
             current_commit = Commit()
             details = data[index + 1].split('|')
             current_commit.revision = int(details[0].strip().strip('r'))
@@ -105,7 +145,7 @@ def get_commits(data):
             break
     return commits
 
-
+# this function saves the commit list (class instances) to a CSV log file
 def save_commit_list_as_csv (location):    
     with open(location,"wb") as data_export:
         fnameWriter = csv.writer(data_export)
@@ -117,22 +157,27 @@ def save_commit_list_as_csv (location):
             commit.comment])
     data_export.close()
 
+# this function saves the analysis results to the console, and is used where the result to save, is formatted as a single dictionary
+# the function accepts as parameters: data, and location, so can be used many times 
 def save_dict_as_csv (data,location):
     with open(location,'wb') as output_file:
         w = csv.writer(output_file)
         w.writerows(data.items())
     output_file.close()
 
+# this function saves the analysis results to a CSV log file, and is used where the result to save, is formatted as a list of dictionaries
 def save_dict_list_as_csv(data, location) :          
     keys = data[0].keys()
     with open(location, 'wb') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
-        dict_writer.writerows(data)
-            
+        dict_writer.writerows(data)    
     output_file.close()
-    
+
+# this function prints the analysis results to the console, and is used where the result to print, is formatted as a single dictionary
+# the function accepts as parameters: data, and location, so can be used many times     
 def print_dict_to_console(data,title):
+    print ''
     print title
     print "="*len(title)
     ls = list()
@@ -143,16 +188,12 @@ def print_dict_to_console(data,title):
         print key, val
     return ls
 
-def print_to_console(): 
-    print authors
-    print days
-    print weeks
-    console1 = print_dict_to_console(authors, "Revisions By Author")
-
-    title = "Revisions by Author By Change Type"
+# this function prints the analysis results to the console, and is used where the result to print, is formatted as a list of dictionaries
+def print_dict_list_to_console(data, title): 
+    print ''
     print title
     print "=" * len(title)
-    for row in change_files:
+    for row in data:
         print row
 
 def export_analysis_data_to_CSV():
@@ -162,26 +203,59 @@ def export_analysis_data_to_CSV():
     filetoCSV = days
     save_dict_as_csv(filetoCSV,"Python Export_Counts of Revisions By Day in Week.csv") 
 
-    filetoCSV = weeks
-    save_dict_as_csv(filetoCSV,"Python Export_Counts of Revisions By Week Number.csv") 
-
     filetoCSV = change_files
     save_dict_list_as_csv(filetoCSV,"Python Export_Counts of Files Changed By Action Type.csv")         
-        
-        
+
+    
 # main program 
-       
-data = read_file('changes_python.txt')
-results = get_commits(data)
-save_commit_list_as_csv("Python Export_Commit List.csv") 
+if __name__ == '__main__':       
+    
+    os.system('cls')
+    
+    print '\n***************************************\n'
+    print "Analysis for sample text file"
+    print "Text file is 'changes_python.txt'"
+    print '\n***************************************\n'
+    while True:
+        try: 
+            s_inp = raw_input("Enter any key to read data file and get commits: ")
+            data = read_file('changes_python.txt')
+            results = get_commits(data)
+            # following line saves the commit list with 422 rows to a csv which acts as a log file
+            save_commit_list_as_csv("Python Export_Commit List.csv") 
+            print "\nFile read was successful, and data has been extracted"
+            print "{} rows of commits extracted from {} lines"  .format(len(results), len(data))
+            print "Results saved to csv log file in working directory"
+            break
+        
+        except:
+            print "\nError while reading file. Please try again."
+            print "Ensure text file is saved as 'changes_python.txt and is saved in the working directory."
+            continue    
+    
+    s_inp = raw_input("\nEnter any key to perform analysis on commit data: ")
+    
+    authors = get_revisions_by_attribute(results, "author")
+    days = get_revisions_by_attribute(results, "dayinweek")
+    change_files = get_file_changes_by_action(results)
+    
+    export_analysis_data_to_CSV()
 
-authors = get_revisions_by_attribute(results, "author")
-days = get_revisions_by_attribute(results, "dayinweek")
-weeks = get_revisions_by_attribute(results, "weeknumber")
-change_files = get_file_changes_by_action(results)
+    print "\nAnalysis on commit data is completed"
+    print "Results saved as CSV files in working directory"
+     
+    print "\nEnter 'Y' to print analysis summary to console"
+    print "Enter any other key to exit program"
+    choice = raw_input()
+    if choice.lower() == 'y' :
+        print_dict_to_console(authors, "Revisions By Author")
+        print_dict_to_console(days, "Revisions By Day in Week")
+        print_dict_list_to_console(change_files, "Revisions By File Changes By Author")
+    else :
+        print "\nExited program"
+    
 
-export_analysis_data_to_CSV()
-
+   
 
 
 
